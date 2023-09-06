@@ -18,15 +18,16 @@ draw_options = pymunk.pygame_util.DrawOptions(screen)
 clock = pygame.time.Clock()
 FPS = 120
 
-#ball size
-dia = 36
-
 dragging = False
 drag_start = (0, 0)
-IMPULSE_SCALING_FACTOR = 10
+IMPULSE_SCALING_FACTOR = 50
 
 #load images
 green_image = pygame.image.load("assets/Golf_green.png").convert_alpha()
+
+#Hole params
+HOLE_RADIUS = 28
+HOLE_POS = (SCREEN_WIDTH - 150, SCREEN_HEIGHT / 2)
 
 x = screen.get_width() / 2
 y = screen.get_height() / 2
@@ -73,6 +74,14 @@ def create_wall(start, end, thickness):
     space.add(shape)
     return shape
 
+def is_ball_in_hole(ball_pos, hole_pos, hole_radius):
+    #check if ball is within the hole radius
+    dx = ball_pos[0] - hole_pos[0]
+    dy = ball_pos[1] - hole_pos[1]
+
+    distance = (dx**2 + dy**2) ** 0.5
+    return distance < hole_radius
+
 golf_ball = create_ball(25, (500,500))
 
 bottom_wall = create_wall((0, SCREEN_HEIGHT), (SCREEN_WIDTH, SCREEN_HEIGHT), 1)
@@ -90,13 +99,22 @@ while running:
     #draw golf green
     screen.blit(green_image, (0,0))
 
+    # Draw Hole
+    pygame.draw.circle(screen, (0, 0, 0), HOLE_POS, HOLE_RADIUS)
+    pygame.draw.circle(screen, (150, 150, 150), HOLE_POS, HOLE_RADIUS - 5)
+
     # Draw golf ball
     pygame.draw.circle(screen, (255, 255, 255), (int(golf_ball.body.position.x), int(golf_ball.body.position.y)), 25)
+
+    #check if ball is in hole
+    if is_ball_in_hole(golf_ball.body.position, HOLE_POS, HOLE_RADIUS):
+        golf_ball.body.position = (500, 500)
+        golf_ball.body.velocity = (0, 0)
 
     #event handler
     for event in pygame.event.get():
         if dragging:
-            draw_dotted_line(screen, golf_ball.body.position, pygame.mouse.get_pos(), (255, 0, 0), width=2)
+            draw_dotted_line(screen, golf_ball.body.position, pygame.mouse.get_pos(), (0, 0, 0), width=2)
         if event.type == pygame.MOUSEBUTTONDOWN:
             drag_start = pygame.mouse.get_pos()
             dragging = True
